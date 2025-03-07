@@ -13,6 +13,15 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ url('/multable') }}">Multiplication Table</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/minitest') }}">Mini Test</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/transcript') }}">Transcript</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/users') }}">Users</a>
+            </li>
         </ul>
     </div>
 </nav>

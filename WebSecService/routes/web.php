@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\UsersController;
+
 
 
 Route::get('/', function () {
@@ -18,3 +20,32 @@ Route::get('/multable', function (Request $request) {
  Route::get('/prime', function () {
     return view('prime'); //prime.blade.php
  });
+
+ Route::get('/minitest', function () {
+    $bill=[
+    ['item'=>'jim','quantity'=>5,'price'=>12.50],
+    ['item'=>'tea','quantity'=>15,'price'=>32.00],
+    ['item'=>'banana','quantity'=>22,'price'=>15.75],
+    ['item'=>'Rice','quantity'=>50,'price'=>2.20],
+    ];
+    return view('minitest',compact("bill"));
+ });
+ Route::get('/transcript', function () {
+    $student=[
+   'name'=>'loay',
+   'id'=>'12345',
+   'departement'=>'Network',
+   'Gpa'=>3.9,
+   'courses'=>[
+    ['code'=>'CS50','name'=>'OOP','Grade'=>'A'],
+    ['code'=>'CS50','name'=>'OOP','Grade'=>'A'],
+    ['code'=>'CS50','name'=>'OOP','Grade'=>'A'],
+
+   ]
+    ];
+    return view('transcript',compact("student"));
+ })
+ ;
+
+ Route::resource('users', UsersController::class);
+

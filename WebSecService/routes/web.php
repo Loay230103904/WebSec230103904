@@ -3,8 +3,18 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\AuthController;
 
-
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
 
 Route::get('/', function () {
     return view('welcome');
@@ -47,5 +57,19 @@ Route::get('/multable', function (Request $request) {
  })
  ;
 
- Route::resource('users', UsersController::class);
 
+ Route::resource('users', UsersController::class);
+ Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+ Route::post('/register', [AuthController::class, 'register']);
+ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+ Route::post('/login', [AuthController::class, 'login']);
+ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+ Route::middleware('auth')->group(function () {
+    Route::get('/change-password', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
+    Route::post('/change-password', [AuthController::class, 'updatePassword'])->name('password.update');
+    Route::get('/', function () {
+        return view('welcome');
+    })->name('home');
+
+ });

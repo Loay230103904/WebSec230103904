@@ -5,16 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles; // ✅ استيراد Spatie
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles; // ✅ إضافة HasRoles لدعم الأدوار والصلاحيات
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
+        'credit'
     ];
 
     protected $hidden = [
@@ -30,9 +31,20 @@ class User extends Authenticatable
         ];
     }
 
-    public function tasks()
-{
-    return $this->hasMany(Task::class);
-}
+    // ✅ Check if user is Admin
+    public function isAdmin()
+    {
+        return isset($this->role) && $this->role === 'admin';
+    }
 
+    // ✅ Check if user is an Employee
+    public function isEmployee()
+    {
+        return $this->role === 'employee';
+    }
+
+    public function purchases() {
+        return $this->hasMany(Purchase::class);
+    }
+    
 }

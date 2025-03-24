@@ -8,11 +8,11 @@
             <h2>Users</h2>
         </div>
         <div class="col text-end">
-            @can('edit_users')  {{-- Only Admins can create users --}}
+            @if(auth()->user()->isAdmin()) {{-- Only Admins can create users --}}
             <a href="{{ route('users.create') }}" class="btn btn-primary">
                 <i class="fas fa-user-plus"></i> Create User
             </a>
-            @endcan
+            @endif
         </div>
     </div>
 
@@ -55,6 +55,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
+                            <th>Role</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -63,24 +64,20 @@
                             <tr>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
+                                <td>{{ $user->role }}</td> <!-- ✅ عرض الدور لكل مستخدم -->
                                 <td class="text-end">
                                     <a href="{{ route('users.show', $user->id) }}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> View
                                     </a>
                                     
-                                    @can('edit_users') {{-- Only Admins can edit any user --}}
-                                    <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    @elsecan('edit_profile') {{-- Users & Employees can edit their own profile --}}
-                                    @if(auth()->user()->id === $user->id)
+                                    @if(auth()->user()->isAdmin() || auth()->user()->id === $user->id || 
+                                        (auth()->user()->isEmployee() && !$user->isAdmin()))
                                     <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i> Edit
                                     </a>
                                     @endif
-                                    @endcan
 
-                                    @can('delete_users') {{-- Only Admins can delete users --}}
+                                    @if(auth()->user()->isAdmin()) {{-- Only Admins can delete users --}}
                                     <form action="{{ route('users.destroy', $user->id) }}" method="POST" 
                                         style="display:inline;">
                                         @csrf
@@ -90,12 +87,12 @@
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </form>
-                                    @endcan
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center">No users found</td>
+                                <td colspan="4" class="text-center">No users found</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -11,7 +11,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Restrict this form to Admins only -->
-                    @can('edit_users')
+                    @if(auth()->user()->isAdmin())
                         @if ($errors->any())
                             <div class="alert alert-danger">
                                 <ul class="mb-0">
@@ -74,7 +74,6 @@
                             </div>
 
                             <!-- Role Selection (Admins only) -->
-                            @can('edit_users')
                             <div class="mb-3">
                                 <label for="role" class="form-label">Role</label>
                                 <div class="input-group">
@@ -89,7 +88,15 @@
                                     @enderror
                                 </div>
                             </div>
-                            @endcan
+
+                            <div class="mb-3">
+                                <label for="credit" class="form-label">Credit Balance</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                    <input type="number" class="form-control" id="credit" name="credit" min="0" step="0.01" value="{{ old('credit', 0) }}">
+                                </div>
+                            </div>
+                            
 
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-primary">
@@ -104,7 +111,7 @@
                         <div class="alert alert-danger">
                             <p>You are not authorized to create a new user.</p>
                         </div>
-                    @endcan
+                    @endif
                 </div>
             </div>
         </div>

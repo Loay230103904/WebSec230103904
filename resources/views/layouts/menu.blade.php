@@ -29,6 +29,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url('/tasks') }}">tasks</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url('/products') }}">Products</a>
+                </li>
             </ul>
 
             <ul class="navbar-nav ms-auto">
@@ -38,17 +41,18 @@
                             Welcome, {{ Auth::user()->name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger">Logout</button>
-                                </form>
-                            </li>
-                            <li>
-    <a class="dropdown-item" href="{{ route('password.change') }}">Change Password</a>
-</li>
 
-                        </ul>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('users.profile') }}">
+                                    <i class="fas fa-user"></i> My Profile
+                                </a>
+                            </li>
+                          
+                    <li>
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger">Logout</button>
+                        </form>
                     </li>
                 @else
                     <li class="nav-item">

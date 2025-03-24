@@ -20,8 +20,8 @@
                         </div>
                     @endif
 
-                    <!-- Restrict access: Only Admins, Employees (limited), and the user themselves can edit -->
-                    @can('edit_users')
+                    @if(auth()->user()->isAdmin() || auth()->user()->id === $user->id || 
+                        (auth()->user()->isEmployee() && !$user->isAdmin()))
                         <form action="{{ route('users.update', $user->id) }}" method="POST">
                             @csrf
                             @method('PUT')
@@ -40,8 +40,7 @@
                                 </div>
                             </div>
 
-                            <!-- Admins can edit email, others cannot -->
-                            @can('edit_users')
+                            @if(auth()->user()->isAdmin())
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
                                 <div class="input-group">
@@ -57,10 +56,9 @@
                             </div>
                             @else
                             <input type="hidden" name="email" value="{{ $user->email }}">
-                            @endcan
+                            @endif
 
-                            <!-- Password Section -->
-                            @can('change_password')
+                            @if(auth()->user()->isAdmin())
                             <div class="mb-3">
                                 <label for="password" class="form-label">
                                     Password 
@@ -89,25 +87,33 @@
                                         placeholder="Confirm new password">
                                 </div>
                             </div>
-                            @endcan
+                            @endif
 
-                            <!-- Role Selection (Admins only) -->
-                            @can('edit_users')
+                            @if(auth()->user()->isAdmin())
                             <div class="mb-3">
                                 <label for="role" class="form-label">Role</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
                                     <select class="form-control @error('role') is-invalid @enderror" id="role" name="role" required>
-                                        <option value="user" {{ $user->hasRole('user') ? 'selected' : '' }}>Normal User</option>
-                                        <option value="employee" {{ $user->hasRole('employee') ? 'selected' : '' }}>Employee</option>
-                                        <option value="admin" {{ $user->hasRole('admin') ? 'selected' : '' }}>Admin</option>
+                                        <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>Normal User</option>
+                                        <option value="employee" {{ $user->role === 'employee' ? 'selected' : '' }}>Employee</option>
+                                        <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>Admin</option>
                                     </select>
                                     @error('role')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-                            @endcan
+
+                            <div class="mb-3">
+                                <label for="credit" class="form-label">Credit Balance</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                    <input type="number" class="form-control" id="credit" name="credit" min="0" step="0.01" value="{{ old('credit', $user->credit) }}">
+                                </div>
+                            </div>
+                            
+                            @endif
 
                             <div class="d-grid gap-2">
                                 <button type="submit" class="btn btn-warning">
@@ -122,7 +128,7 @@
                         <div class="alert alert-danger">
                             <p>You are not authorized to edit this user.</p>
                         </div>
-                    @endcan
+                    @endif
                 </div>
             </div>
         </div>

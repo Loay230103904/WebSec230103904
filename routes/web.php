@@ -1,15 +1,16 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\TaskController;
-
-use Spatie\Permission\Models\Role;
-
-
-
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -66,36 +67,45 @@ Route::get('/multable', function (Request $request) {
 
  
 
-// Public Routes (Accessible by guests)
+// ✅ الصفحة الرئيسية (متاحة لأي مستخدم مسجل دخول)
+Route::middleware('auth')->group(function () {
+    Route::get('/', function () {
+        return view('welcome');
+    })->name('home');
+});
+
+// ✅ تسجيل الدخول والتسجيل
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Routes for authenticated users
+// ✅ الملف الشخصي (متاح للجميع)
 Route::middleware('auth')->group(function () {
-    
-    // Home page
-    Route::get('/', function () {
-        return view('welcome');
-    })->name('home');
+    Route::get('/profile', [UsersController::class, 'profile'])->name('users.profile');
+    Route::post('/profile', [UsersController::class, 'updateProfile'])->name('users.profile.update');
 
-    // Password Change (Only if the user has permission)
-    Route::middleware('can:change_password')->group(function () {
-        Route::get('/change-password', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
-        Route::post('/change-password', [AuthController::class, 'updatePassword'])->name('password.update');
-    });
 
-    // User Management (Only Admins)
-    Route::middleware('role:admin')->group(function () {
-        Route::resource('users', UsersController::class);
-    });
-
-});
-
-Route::middleware(['auth'])->group(function () {
+    // ✅ المهام (متاحة لأي مستخدم مسجل دخول)
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+
+    // ✅ إدارة المستخدمين (Admins فقط) - التحقق داخل الكنترولر
+    Route::resource('users', UsersController::class);
+
+    // ✅ تغيير كلمة المرور (متاح للجميع)
+    Route::get('/change-password', [AuthController::class, 'showChangePasswordForm'])->name('password.change');
+    Route::post('/change-password', [AuthController::class, 'updatePassword'])->name('password.update');
+
+    
 });
+
+Route::resource('products', ProductController::class);
+Route::post('/products/{product}/purchase', [ProductController::class, 'purchase'])
+    ->name('products.purchase')
+    ->middleware('auth');
+Route::post('/users/{user}/add-credit', [UsersController::class, 'addCredit'])->name('users.addCredit');
+
+

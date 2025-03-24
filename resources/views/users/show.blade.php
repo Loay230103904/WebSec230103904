@@ -18,17 +18,12 @@
                             <i class="fas fa-arrow-left"></i> Back to Users
                         </a>
 
-                        @can('edit_users')
+                        @if(auth()->user()->isAdmin() || auth()->user()->id === $user->id || 
+                            (auth()->user()->isEmployee() && !$user->isAdmin()))
                             <a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning">
-                                <i class="fas fa-edit"></i> Edit User
+                                <i class="fas fa-edit"></i> Edit Profile
                             </a>
-                        @elsecan('edit_profile')
-                            @if(auth()->user()->id === $user->id)
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning">
-                                    <i class="fas fa-edit"></i> Edit Profile
-                                </a>
-                            @endif
-                        @endcan
+                        @endif
                     </div>
                 </div>
             </div>

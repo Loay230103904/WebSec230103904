@@ -6,8 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 class UsersController extends Controller
 {
@@ -16,19 +14,16 @@ class UsersController extends Controller
      */
     public function index(Request $request)
     {
-        // Only admins with 'view_users' permission can access
-        if (!Auth::user()->can('view_users')) {
+        if (Auth::user()->role !== 'admin') {  // ✅ تحقق بدون ميدل وير
             return abort(403, 'Unauthorized action.');
         }
 
         $query = User::query();
 
-        // Filter by name if provided
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->input('name') . '%');
         }
 
-        // Filter by email if provided
         if ($request->filled('email')) {
             $query->where('email', 'like', '%' . $request->input('email') . '%');
         }
@@ -44,8 +39,7 @@ class UsersController extends Controller
      */
     public function create()
     {
-        // Only admins can create users
-        if (!Auth::user()->can('edit_users')) {
+        if (Auth::user()->role !== 'admin') {
             return abort(403, 'Unauthorized action.');
         }
 
@@ -57,8 +51,7 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        // Only admins can store new users
-        if (!Auth::user()->can('edit_users')) {
+        if (Auth::user()->role !== 'admin') {
             return abort(403, 'Unauthorized action.');
         }
 
@@ -67,16 +60,18 @@ class UsersController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'role' => 'required|in:admin,employee,user',
+            'credit' => 'nullable|numeric|min:0', // ✅ New: Validate credit
+
         ]);
 
-        $user = User::create([
+        User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-        ]);
+            'role' => $request->role, 
+            'credit' => $request->credit ?? 0, // ✅ New: Set default credit to 0
 
-        // Assign the selected role using Spatie
-        $user->assignRole($request->role);
+        ]);
 
         return redirect()->route('users.index')->with('success', 'User added successfully.');
     }
@@ -86,8 +81,7 @@ class UsersController extends Controller
      */
     public function show(User $user)
     {
-        // Allow the user to see their own profile or admins to see all users
-        if (!Auth::user()->can('view_users') && Auth::user()->id !== $user->id) {
+        if (Auth::user()->id !== $user->id && Auth::user()->role !== 'admin') {
             return abort(403, 'Unauthorized action.');
         }
 
@@ -96,16 +90,13 @@ class UsersController extends Controller
 
     /**
      * Show the form for editing the specified user.
-     * Admins can edit any user, Employees can edit general info, and Users can edit themselves.
      */
     public function edit(User $user)
     {
         $authUser = Auth::user();
 
-        // Admins can edit anyone
-        // Employees can edit users as long as they are not admins
-        // Regular users can only edit themselves
-        if ($authUser->id !== $user->id && !$authUser->can('edit_users') && !($authUser->hasRole('employee') && !$user->hasRole('admin'))) {
+        if ($authUser->id !== $user->id && $authUser->role !== 'admin' && 
+            !($authUser->role === 'employee' && $user->role !== 'admin')) {
             return abort(403, 'Unauthorized action.');
         }
 
@@ -114,32 +105,25 @@ class UsersController extends Controller
 
     /**
      * Update the specified user in the database.
-     * Admins can update everything, Employees can update general info, Users can update their profile only.
      */
     public function update(Request $request, User $user)
     {
         $authUser = Auth::user();
 
-        // Check if the user has the right permissions
-        if ($authUser->id !== $user->id && !$authUser->can('edit_users') && !($authUser->hasRole('employee') && !$user->hasRole('admin'))) {
+        if ($authUser->id !== $user->id && $authUser->role !== 'admin' && 
+            !($authUser->role === 'employee' && $user->role !== 'admin')) {
             return abort(403, 'Unauthorized action.');
         }
 
-        // Validation rules based on role
-        if ($authUser->can('edit_users')) {
-            // Admin: Can update everything
+        if ($authUser->role === 'admin') {
             $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'password' => 'nullable|string|min:6|confirmed',
+                'credit' => 'nullable|numeric|min:0', // ✅ New: Validate credit
+
             ]);
-        } elseif ($authUser->hasRole('employee')) {
-            // Employee: Can only update name
-            $request->validate([
-                'name' => 'required|string|max:255',
-            ]);
-        } elseif ($authUser->id === $user->id) {
-            // Regular user: Can only update their own name
+        } elseif ($authUser->role === 'employee' || $authUser->id === $user->id) {
             $request->validate([
                 'name' => 'required|string|max:255',
             ]);
@@ -164,12 +148,63 @@ class UsersController extends Controller
      */
     public function destroy(User $user)
     {
-        // Only admins can delete users
-        if (!Auth::user()->can('delete_users')) {
+        if (Auth::user()->role !== 'admin') {
             return abort(403, 'Unauthorized action.');
         }
 
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
+
+    public function profile()
+{
+    $user = Auth::user();
+    return view('users.profile', compact('user'));
+}
+
+public function updateProfile(Request $request)
+{
+    $user = Auth::user();
+
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+        'password' => 'nullable|string|min:6|confirmed',
+        'credit' => $request->credit ?? $user->credit, // ✅ New: Update credit
+
+    ]);
+
+    $user->name = $request->name;
+    $user->email = $request->email;
+
+    if ($request->filled('password')) {
+        $user->password = Hash::make($request->password);
+    }
+
+    $user->save();
+
+    return redirect()->route('users.profile')->with('success', 'Profile updated successfully.');
+}
+
+
+public function addCredit(Request $request, User $user)
+{
+    // Only Admins and Employees can add credit
+    if (!Auth::user()->isAdmin() && !Auth::user()->isEmployee()) {
+        return abort(403, 'Unauthorized action.');
+    }
+
+    // Validate request
+    $request->validate([
+        'amount' => 'required|numeric|min:1',
+    ]);
+
+    // Add credit to user account
+    $user->credit += $request->amount;
+    $user->save();
+
+    return redirect()->back()->with('success', 'Credit added successfully!');
+}
+
+
 }

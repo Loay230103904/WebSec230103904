@@ -108,6 +108,8 @@ class UsersController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // dd($request->all()); // هوقف التنفيذ وهعرض كل البيانات اللي وصلت
+
         $authUser = Auth::user();
 
         if ($authUser->id !== $user->id && $authUser->role !== 'admin' && 
@@ -130,10 +132,14 @@ class UsersController extends Controller
         } else {
             abort(403);
         }
-
+        if ($authUser->role === 'admin' && $request->has('credit')) {
+            $user->credit = is_numeric($request->credit) ? floatval($request->credit) : 0;
+        }
         $user->name = $request->name;
         if ($request->filled('email')) {
             $user->email = $request->email;
+            // $user->credit = is_numeric($request->credit) ? floatval($request->credit) : 0;
+
         }
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
@@ -187,23 +193,8 @@ public function updateProfile(Request $request)
 }
 
 
-public function addCredit(Request $request, User $user)
-{
-    // Only Admins and Employees can add credit
-    if (!Auth::user()->isAdmin() && !Auth::user()->isEmployee()) {
-        return abort(403, 'Unauthorized action.');
-    }
-
-    // Validate request
-    $request->validate([
-        'amount' => 'required|numeric|min:1',
-    ]);
-
-    // Add credit to user account
-    $user->credit += $request->amount;
-    $user->save();
-
-    return redirect()->back()->with('success', 'Credit added successfully!');
+public function addCredit(Request $request, User $user) {
+    dd($user); // هتوقف التنفيذ وتعرض بيانات اليوزر
 }
 
 
